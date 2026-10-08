@@ -1,4 +1,5 @@
 using AutoService.Billing.Domain;
+using AutoService.Billing.Infrastructure;
 using AutoService.Billing.Pricing;
 using AutoService.Billing.Stock;
 
@@ -6,44 +7,54 @@ namespace AutoService.Billing;
 
 public class OrderCalculator
 {
+    // Наценка за работу в воскресенье
+    public const decimal SundaySurcharge = 1.1m;
+
     private readonly IPriceList _prices;
     private readonly IPartsStock _stock;
     private readonly DiscountPolicy _discounts;
+    private readonly IClock _clock;
+    private readonly IOrderLog _log;
 
-    public OrderCalculator(IPriceList prices, IPartsStock stock, DiscountPolicy discounts)
+    public OrderCalculator(IPriceList prices, IPartsStock stock, DiscountPolicy discounts,
+        IClock clock, IOrderLog log)
     {
         _prices = prices;
         _stock = stock;
         _discounts = discounts;
+        _clock = clock;
+        _log = log;
     }
 
     public decimal Calculate(Order order, ClientType clientType)
     {
-        if (order == null)
-            throw new ArgumentNullException(nameof(order));
+        ArgumentNullException.ThrowIfNull(order);
         if (order.Services.Count == 0)
-            throw new ArgumentException("В заказе нет услуг");
+            throw new ArgumentException("В заказе нет услуг", nameof(order));
 
         decimal total = 0;
-        foreach (var s in order.Services)
-            total += _prices.GetPrice(s);
+        foreach (var service in order.Services)
+            total += _prices.GetPrice(service);
 
-        foreach (var p in order.Parts)
-        {
-            if (p.Quantity <= 0)
-                throw new ArgumentException("Неверное количество");
-            if (!_stock.TryReserve(p.Article, p.Quantity))
-                throw new InvalidOperationException("Недостаточно на складе: " + p.Article);
-            total += _stock.GetPrice(p.Article) * p.Quantity;
-        }
+        foreach (var part in order.Parts)
+            total += ReservePart(part);
 
         total = _discounts.Apply(total, clientType);
 
-        if (DateTime.Now.DayOfWeek == DayOfWeek.Sunday)
-            total = total * 1.1m;
+        if (_clock.Today.DayOfWeek == DayOfWeek.Sunday)
+            total *= SundaySurcharge;
 
         total = Math.Round(total, 2);
-        Console.WriteLine("Заказ " + order.Id + " рассчитан: " + total);
+        _log.Write($"Заказ {order.Id} рассчитан: {total}");
         return total;
+    }
+
+    private decimal ReservePart(PartLine part)
+    {
+        if (part.Quantity <= 0)
+            throw new ArgumentException($"Неверное количество запчасти {part.Article}: {part.Quantity}");
+        if (!_stock.TryReserve(part.Article, part.Quantity))
+            throw new InvalidOperationException($"Недостаточно на складе: {part.Article}");
+        return _stock.GetPrice(part.Article) * part.Quantity;
     }
 }

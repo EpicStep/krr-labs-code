@@ -1,5 +1,6 @@
 using AutoService.Billing;
 using AutoService.Billing.Domain;
+using AutoService.Billing.Infrastructure;
 using AutoService.Billing.Pricing;
 using AutoService.Billing.Stock;
 
@@ -17,7 +18,8 @@ var warehouse = new PartsWarehouse(new()
     ["BRK-PAD"] = (2300m, 4),
 });
 
-var calc = new OrderCalculator(prices, warehouse, new DiscountPolicy());
+var calc = new OrderCalculator(prices, warehouse, new DiscountPolicy(),
+    new SystemClock(), new ConsoleOrderLog());
 var order = new Order
 {
     Id = 1,
