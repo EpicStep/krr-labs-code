@@ -1,4 +1,4 @@
-namespace AutoService.Billing;
+namespace AutoService.Billing.Domain;
 
 public class Order
 {
@@ -11,4 +11,11 @@ public class PartLine
 {
     public string Article { get; set; } = "";
     public int Quantity { get; set; }
+}
+
+public enum ClientType
+{
+    New,
+    Regular,
+    Vip
 }
