@@ -12,8 +12,11 @@ public class ClientRepository : GenericRepository<Client>, IClientRepository
     public Client? FindByPhone(string phone) =>
         Set.FirstOrDefault(c => c.Phone == phone);
 
+    // LOWER() в SQLite работает только с латиницей, поэтому
+    // сравнение без учёта регистра делается уже в памяти
     public IEnumerable<Client> SearchByName(string part) =>
-        Set.Where(c => c.FullName.ToLower().Contains(part.ToLower()))
+        Set.AsEnumerable()
+           .Where(c => c.FullName.Contains(part, StringComparison.CurrentCultureIgnoreCase))
            .OrderBy(c => c.FullName)
            .ToList();
 
