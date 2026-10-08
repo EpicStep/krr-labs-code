@@ -1,0 +1,24 @@
+@host = http://localhost:5243
+
+POST {{host}}/user
+Content-Type: application/json
+
+{
+  "Login": "example_user",
+  "PassHash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+}
+
+###
+GET {{host}}/user/1
+
+###
+PUT {{host}}/user/1
+Content-Type: application/json
+
+{
+  "Login": "example_user2",
+  "PassHash": "daaad6e5604e8e17bd9f108d91e26afe6281dac8fda0091040a7a6d7bd9b43b5"
+}
+
+###
+DELETE {{host}}/user/1
