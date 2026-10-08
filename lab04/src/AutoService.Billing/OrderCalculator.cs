@@ -1,15 +1,19 @@
+using AutoService.Billing.Domain;
+using AutoService.Billing.Pricing;
+using AutoService.Billing.Stock;
+
 namespace AutoService.Billing;
 
 public class OrderCalculator
 {
-    private readonly Dictionary<string, decimal> _prices = new()
-    {
-        ["Замена масла"] = 1200m,
-        ["Диагностика"] = 900m,
-        ["Замена колодок"] = 2500m,
-    };
+    private readonly IPriceList _prices;
+    private readonly IPartsStock _stock;
 
-    private readonly PartsWarehouse _warehouse = new PartsWarehouse();
+    public OrderCalculator(IPriceList prices, IPartsStock stock)
+    {
+        _prices = prices;
+        _stock = stock;
+    }
 
     public decimal Calculate(Order order, string clientType)
     {
@@ -20,19 +24,15 @@ public class OrderCalculator
 
         decimal total = 0;
         foreach (var s in order.Services)
-        {
-            if (!_prices.ContainsKey(s))
-                throw new KeyNotFoundException("Нет такой услуги: " + s);
-            total += _prices[s];
-        }
+            total += _prices.GetPrice(s);
 
         foreach (var p in order.Parts)
         {
             if (p.Quantity <= 0)
                 throw new ArgumentException("Неверное количество");
-            if (!_warehouse.Reserve(p.Article, p.Quantity))
+            if (!_stock.TryReserve(p.Article, p.Quantity))
                 throw new InvalidOperationException("Недостаточно на складе: " + p.Article);
-            total += _warehouse.GetPrice(p.Article) * p.Quantity;
+            total += _stock.GetPrice(p.Article) * p.Quantity;
         }
 
         if (clientType == "regular")

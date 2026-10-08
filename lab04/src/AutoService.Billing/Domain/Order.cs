@@ -1,4 +1,4 @@
-namespace AutoService.Billing;
+namespace AutoService.Billing.Domain;
 
 public class Order
 {
