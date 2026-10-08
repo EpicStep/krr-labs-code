@@ -8,14 +8,16 @@ public class OrderCalculator
 {
     private readonly IPriceList _prices;
     private readonly IPartsStock _stock;
+    private readonly DiscountPolicy _discounts;
 
-    public OrderCalculator(IPriceList prices, IPartsStock stock)
+    public OrderCalculator(IPriceList prices, IPartsStock stock, DiscountPolicy discounts)
     {
         _prices = prices;
         _stock = stock;
+        _discounts = discounts;
     }
 
-    public decimal Calculate(Order order, string clientType)
+    public decimal Calculate(Order order, ClientType clientType)
     {
         if (order == null)
             throw new ArgumentNullException(nameof(order));
@@ -35,12 +37,7 @@ public class OrderCalculator
             total += _stock.GetPrice(p.Article) * p.Quantity;
         }
 
-        if (clientType == "regular")
-            total = total * 0.95m;
-        else if (clientType == "vip")
-            total = total * 0.9m;
-        else if (clientType != "new")
-            throw new ArgumentException("Неизвестный тип клиента");
+        total = _discounts.Apply(total, clientType);
 
         if (DateTime.Now.DayOfWeek == DayOfWeek.Sunday)
             total = total * 1.1m;

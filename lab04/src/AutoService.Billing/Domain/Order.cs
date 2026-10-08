@@ -12,3 +12,10 @@ public class PartLine
     public string Article { get; set; } = "";
     public int Quantity { get; set; }
 }
+
+public enum ClientType
+{
+    New,
+    Regular,
+    Vip
+}

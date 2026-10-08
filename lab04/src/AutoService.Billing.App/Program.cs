@@ -17,11 +17,11 @@ var warehouse = new PartsWarehouse(new()
     ["BRK-PAD"] = (2300m, 4),
 });
 
-var calc = new OrderCalculator(prices, warehouse);
+var calc = new OrderCalculator(prices, warehouse, new DiscountPolicy());
 var order = new Order
 {
     Id = 1,
     Services = { "Замена масла", "Диагностика" },
     Parts = { new PartLine { Article = "OIL-5W30", Quantity = 4 }, new PartLine { Article = "FLT-OIL", Quantity = 1 } }
 };
-calc.Calculate(order, "regular");
+calc.Calculate(order, ClientType.Regular);
